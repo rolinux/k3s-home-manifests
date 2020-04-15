@@ -1,0 +1,71 @@
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: registry
+  namespace: registry
+  labels:
+    k8s-app: registry
+spec:
+  selector:
+    matchLabels:
+      k8s-app: registry
+  template:
+    metadata:
+      labels:
+        k8s-app: registry
+    spec:
+      affinity:
+        nodeAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+            - matchExpressions:
+              - key: kubernetes.io/hostname
+                operator: In
+                values:
+                - nuc5
+      securityContext:
+        runAsUser: 1005
+        runAsGroup: 1005
+      containers:
+      - name: registry
+        image: registry:latest
+        imagePullPolicy: Always
+        ports:
+          - name: registry
+            containerPort: 5000
+        livenessProbe:
+          httpGet:
+            path: /
+            port: 5000
+        readinessProbe:
+          httpGet:
+            path: /
+            port: 5000
+        volumeMounts:
+        - name: data-volume
+          mountPath: /var/lib/registry
+        - name: htpasswd-secret-volume
+          mountPath: /etc/docker/registry/htpasswd
+          subPath: htpasswd
+          readOnly: true
+        - name: config-cm-volume
+          mountPath: /etc/docker/registry/config.yml
+          subPath: config.yml
+          readOnly: true
+      volumes:
+      - name: data-volume
+        hostPath:
+          # directory location on host
+          path: /volumes/registry
+          # this field is optional
+          type: Directory
+      - name: htpasswd-secret-volume
+        secret:
+          secretName: htpasswd-secret
+      - name: config-cm-volume
+        configMap:
+          name: config-cm
+          items:
+          - key: config.yml
+            path: config.yml

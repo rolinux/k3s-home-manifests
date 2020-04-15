@@ -1,0 +1,101 @@
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: prometheus
+  namespace: monitoring
+  labels:
+    k8s-app: prometheus
+spec:
+  selector:
+    matchLabels:
+      k8s-app: prometheus
+  template:
+    metadata:
+      labels:
+        k8s-app: prometheus
+    spec:
+      affinity:
+        nodeAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+            - matchExpressions:
+              - key: kubernetes.io/hostname
+                operator: In
+                values:
+                - nuc5
+      hostAliases:
+      - ip: "192.168.252.11"
+        hostnames:
+        - "pi3"
+      - ip: "192.168.252.12"
+        hostnames:
+        - "piz"
+      - ip: "192.168.252.13"
+        hostnames:
+        - "pi4"
+      - ip: "192.168.7.3"
+        hostnames:
+        - "key"
+      - ip: "192.168.7.5"
+        hostnames:
+        - "nuc5"
+      - ip: "192.168.7.9"
+        hostnames:
+        - "nuc6"
+      - ip: "192.168.7.15"
+        hostnames:
+        - "nuc8"
+      securityContext:
+        runAsUser: 1004
+        runAsGroup: 1004
+      containers:
+      - args:
+        - --storage.tsdb.retention.time=45d
+        - --config.file=/etc/prometheus.yml
+        name: prometheus
+        image: prom/prometheus
+        imagePullPolicy: Always
+        ports:
+          - name: prometheus
+            containerPort: 9090
+        livenessProbe:
+          httpGet:
+            path: /-/healthy
+            port: prometheus
+            scheme: HTTP
+          initialDelaySeconds: 40
+          timeoutSeconds: 3
+        readinessProbe:
+          httpGet:
+            path: /-/ready
+            port: prometheus
+          initialDelaySeconds: 30
+          timeoutSeconds: 3
+        resources:
+          limits:
+            cpu: 200m
+            memory: 200Mi
+          requests:
+            cpu: 100m
+            memory: 100Mi
+        volumeMounts:
+        - name: data-volume
+          mountPath: /prometheus
+        - name: config-cm-volume
+          mountPath: /etc/prometheus.yml
+          subPath: prometheus.yml
+          readOnly: true
+      volumes:
+      - name: data-volume
+        hostPath:
+          # directory location on host
+          path: /volumes/prometheus
+          # this field is optional
+          type: Directory
+      - name: config-cm-volume
+        configMap:
+          name: prometheus-config-cm
+          items:
+          - key: prometheus.yml
+            path: prometheus.yml

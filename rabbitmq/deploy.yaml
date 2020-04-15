@@ -1,0 +1,72 @@
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: rabbitmq
+  namespace: rabbitmq
+  labels:
+    k8s-app: rabbitmq
+spec:
+  selector:
+    matchLabels:
+      k8s-app: rabbitmq
+  template:
+    metadata:
+      labels:
+        k8s-app: rabbitmq
+    spec:
+      affinity:
+        nodeAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+            - matchExpressions:
+              - key: kubernetes.io/hostname
+                operator: In
+                values:
+                - nuc5
+      securityContext:
+        runAsUser: 1007
+        runAsGroup: 1007
+      containers:
+      - name: rabbitmq
+        image: rabbitmq:3.8-management-alpine
+        imagePullPolicy: Always
+        ports:
+          - name: rabbitmq
+            containerPort: 5672
+          - name: management
+            containerPort: 15672
+        readinessProbe:
+          tcpSocket:
+            port: rabbitmq
+          initialDelaySeconds: 5
+          periodSeconds: 10
+        livenessProbe:
+          tcpSocket:
+            port: rabbitmq
+          initialDelaySeconds: 15
+          periodSeconds: 30
+        env:
+        - name: PUID
+          value: "1007"
+        - name: PGID
+          value: "1007"
+        - name: TZ
+          value: "Europe/London"
+        - name: RABBITMQ_DEFAULT_USER
+          value: "mq"
+        - name: RABBITMQ_DEFAULT_PASS
+          valueFrom:
+            secretKeyRef:
+              name: mq-pass-secret
+              key: pass
+        volumeMounts:
+        - name: data-volume
+          mountPath: /var/lib/rabbitmq
+      volumes:
+      - name: data-volume
+        hostPath:
+          # directory location on host
+          path: /volumes/rabbitmq
+          # this field is optional
+          type: Directory

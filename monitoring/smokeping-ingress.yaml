@@ -1,0 +1,26 @@
+---
+apiVersion: extensions/v1beta1
+kind: Ingress
+metadata:
+  name: smokeping
+  namespace: monitoring
+  annotations:
+    cert-manager.io/cluster-issuer: ca-issuer
+    kubernetes.io/ingress.class: traefik
+    traefik.ingress.kubernetes.io/frontend-entry-points: http,https
+    traefik.ingress.kubernetes.io/redirect-entry-point: https
+    traefik.ingress.kubernetes.io/redirect-permanent: "true"
+spec:
+  rules:
+  - host: smokeping
+    http:
+      paths:
+      - backend:
+          serviceName: smokeping
+          servicePort: 80
+  tls:
+  - hosts:
+    - smokeping
+    secretName: smokeping-ingress-cert
+status:
+  loadBalancer: {}

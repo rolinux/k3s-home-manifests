@@ -1,0 +1,18 @@
+apiVersion: v1
+kind: Service
+metadata:
+  labels:
+    k8s-app: smokeping
+  name: smokeping
+  namespace: monitoring
+spec:
+  ports:
+  - port: 80
+    protocol: TCP
+    targetPort: 80
+  selector:
+    k8s-app: smokeping
+  sessionAffinity: None
+  type: ClusterIP
+status:
+  loadBalancer: {}

@@ -1,0 +1,78 @@
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: smokeping
+  namespace: monitoring
+  labels:
+    k8s-app: smokeping
+spec:
+  selector:
+    matchLabels:
+      k8s-app: smokeping
+  template:
+    metadata:
+      labels:
+        k8s-app: smokeping
+    spec:
+      affinity:
+        nodeAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+            - matchExpressions:
+              - key: kubernetes.io/hostname
+                operator: In
+                values:
+                - nuc5
+      containers:
+      - name: smokeping
+        image: linuxserver/smokeping
+        imagePullPolicy: Always
+        ports:
+          - name: http
+            containerPort: 80
+        livenessProbe:
+          httpGet:
+            path: /
+            port: 80
+        readinessProbe:
+          httpGet:
+            path: /
+            port: 80
+        env:
+        - name: TZ
+          value: "Europe/London"
+        - name: PUID
+          value: "1002"
+        - name: PGID
+          value: "1002"
+        volumeMounts:
+        - name: data-volume
+          mountPath: /data
+        - name: probes-configmap-volume
+          mountPath: /config/Probes
+          subPath: Probes
+          readOnly: true
+        - name: targets-configmap-volume
+          mountPath: /config/Targets
+          subPath: Targets
+          readOnly: true
+      volumes:
+      - name: data-volume
+        hostPath:
+          # directory location on host
+          path: /volumes/smokeping
+          # this field is optional
+          type: Directory
+      - name: probes-configmap-volume
+        configMap:
+          name: smokeping-probes
+          items:
+          - key: Probes
+            path: Probes
+      - name: targets-configmap-volume
+        configMap:
+          name: smokeping-targets
+          items:
+          - key: Targets
+            path: Targets

@@ -1,0 +1,66 @@
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: grafana
+  namespace: monitoring
+  labels:
+    k8s-app: grafana
+spec:
+  selector:
+    matchLabels:
+      k8s-app: grafana
+  template:
+    metadata:
+      labels:
+        k8s-app: grafana
+    spec:
+      affinity:
+        nodeAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+            - matchExpressions:
+              - key: kubernetes.io/hostname
+                operator: In
+                values:
+                - nuc5
+      securityContext:
+        runAsUser: 1003
+        runAsGroup: 1003
+      containers:
+      - name: grafana
+        image: grafana/grafana
+        imagePullPolicy: Always
+        ports:
+          - name: grafana
+            containerPort: 3000
+        livenessProbe:
+          httpGet:
+            path: /api/health
+            port: grafana
+            scheme: HTTP
+          initialDelaySeconds: 60
+          timeoutSeconds: 30
+          failureThreshold: 10
+        readinessProbe:
+          httpGet:
+            path: /api/health
+            port: grafana
+        env:
+        - name: GF_SERVER_ROOT_URL
+          value: "https://grafana"
+        - name: GF_SECURITY_ADMIN_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: grafana-admin-secret
+              key: GF_SECURITY_ADMIN_PASSWORD
+        volumeMounts:
+        - name: data-volume
+          mountPath: /var/lib/grafana
+      volumes:
+      - name: data-volume
+        hostPath:
+          # directory location on host
+          path: /volumes/grafana
+          # this field is optional
+          type: Directory

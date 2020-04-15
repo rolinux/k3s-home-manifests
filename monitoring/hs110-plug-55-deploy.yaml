@@ -1,0 +1,37 @@
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: hs110-plug-55
+  namespace: monitoring
+  labels:
+    k8s-app: hs110-plug-55
+spec:
+  selector:
+    matchLabels:
+      k8s-app: hs110-plug-55
+  template:
+    metadata:
+      labels:
+        k8s-app: hs110-plug-55
+    spec:
+      securityContext:
+        runAsUser: 1009
+        runAsGroup: 1009
+      containers:
+      - name: hs110
+        image: rolinux/hs110-exporter
+        ports:
+          - name: hs110
+            containerPort: 9498
+        livenessProbe:
+          httpGet:
+            path: /metrics
+            port: hs110
+        readinessProbe:
+          httpGet:
+            path: /metrics
+            port: hs110
+        env:
+        - name: TARGET-HS110
+          value: "192.168.252.55"

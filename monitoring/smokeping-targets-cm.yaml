@@ -1,0 +1,104 @@
+apiVersion: v1
+data:
+  Targets: |
+    *** Targets ***
+
+    probe = FPing
+
+    menu = Top
+    title = Network Latency Grapher
+    remark = Welcome to the SmokePing website of WORKS Company. \
+             Here you will learn all about the latency of our network.
+
+    + InternetSites
+
+    menu = Internet Sites
+    title = Internet Sites
+
+    ++ GoogleSearch
+    menu = Google
+    title = google.com
+    host = google.com
+
+    ++ linuxserverio
+    menu = linuxserver.io
+    title = linuxserver.io
+    host = linuxserver.io
+
+    + Europe
+
+    menu = Europe
+    title = European Connectivity
+
+    ++ Finland
+
+    menu = Finland
+    title = Finland
+
+    +++ Lounea
+
+    menu = Lounea
+    title = Loanea
+    host = lounea.fi
+
+    ++ Romania
+
+    menu = Romania
+    title = Romania
+
+    +++ UniversitateaIasi
+
+    menu = UniversitateaIasi
+    title = Universitatea Iasi
+    host = www.uaic.ro
+
+    ++ UK
+
+    menu = United Kingdom
+    title = United Kingdom
+
+    +++ CambridgeUni
+
+    menu = Cambridge
+    title = Cambridge
+    host = cam.ac.uk
+
+    +++ BBC
+
+    menu = BBC
+    title = BBC
+    host = bbc.co.uk
+
+    + USA
+
+    menu = North America
+    title =North American Connectivity
+
+    ++ IU
+
+    menu = IU
+    title = Indiana University
+    host = www.indiana.edu
+
+    + DNS
+    menu = DNS
+    title = DNS
+
+    ++ GoogleDNS2
+    menu = Google DNS 2
+    title = Google DNS 8.8.4.4
+    host = 8.8.4.4
+
+    ++ CloudflareDNS2
+    menu = Cloudflare DNS 2
+    title = Cloudflare DNS 1.0.0.1
+    host = 1.0.0.1
+
+    ++ OpenDNS2
+    menu = OpenDNS2
+    title = OpenDNS2
+    host = 208.67.220.220
+kind: ConfigMap
+metadata:
+  name: smokeping-targets
+  namespace: monitoring

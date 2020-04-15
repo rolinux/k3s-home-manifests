@@ -1,0 +1,25 @@
+apiVersion: extensions/v1beta1
+kind: Ingress
+metadata:
+  annotations:
+    cert-manager.io/cluster-issuer: ca-issuer
+    kubernetes.io/ingress.class: traefik
+    traefik.ingress.kubernetes.io/frontend-entry-points: http,https
+    traefik.ingress.kubernetes.io/redirect-entry-point: https
+    traefik.ingress.kubernetes.io/redirect-permanent: "true"
+  name: registry
+  namespace: registry
+spec:
+  rules:
+  - host: registry2.coroi.net
+    http:
+      paths:
+      - backend:
+          serviceName: registry
+          servicePort: 80
+  tls:
+  - hosts:
+    - registry2.coroi.net
+    secretName: ingress-cert
+status:
+  loadBalancer: {}
