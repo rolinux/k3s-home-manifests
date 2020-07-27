@@ -1,0 +1,53 @@
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: kibana
+  namespace: logging
+  labels:
+    k8s-app: kibana
+spec:
+  selector:
+    matchLabels:
+      k8s-app: kibana
+  template:
+    metadata:
+      labels:
+        k8s-app: kibana
+    spec:
+      securityContext:
+        runAsUser: 1000
+        runAsGroup: 1000
+      affinity:
+        nodeAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+            - matchExpressions:
+              - key: kubernetes.io/hostname
+                operator: In
+                values:
+                - nuc5
+      containers:
+      - name: kibana
+        #image: docker.elastic.co/kibana/kibana:7.8.0
+        image: kibana:7.8.0
+        #imagePullPolicy: Always
+        env:
+        - name: SERVER_NAME
+          value: "kibana"
+        - name: ELASTICSEARCH_HOSTS
+          value: "http://elasticsearch-rest.logging.svc.cluster.local:9200"
+        - name: MONITORING_ENABLED
+          value: "true"
+        - name: JAVA_OPTS
+          value: "-Xms512m -Xmx512m"
+        ports:
+          - name: kibana
+            containerPort: 5601
+        resources:
+          limits:
+            cpu: 1000m
+            memory: 2Gi
+          requests:
+            cpu: 100m
+            memory: 1Gi

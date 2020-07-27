@@ -1,0 +1,61 @@
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: fluent-bit-server
+  namespace: logging
+  labels:
+    k8s-app: fluent-bit-server
+spec:
+  selector:
+    matchLabels:
+      k8s-app: fluent-bit-server
+  template:
+    metadata:
+      labels:
+        k8s-app: fluent-bit-server
+    spec:
+      securityContext:
+        runAsUser: 1014
+        runAsGroup: 1014
+      affinity:
+        nodeAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+            - matchExpressions:
+              - key: kubernetes.io/hostname
+                operator: In
+                values:
+                - nuc5
+      containers:
+      - name: fluent-bit-server
+        image: fluent/fluent-bit
+        imagePullPolicy: Always
+        ports:
+          - name: forward
+            containerPort: 24224
+        resources:
+          limits:
+            cpu: 250m
+            memory: 250Mi
+          requests:
+            cpu: 100m
+            memory: 100Mi
+        volumeMounts:
+        - name: data-volume
+          mountPath: /logs
+        - name: config-cm-volume
+          mountPath: /fluent-bit/etc/fluent-bit.conf
+          subPath: fluent-bit.conf
+          readOnly: true
+      volumes:
+      - name: data-volume
+        hostPath:
+          path: /volumes/logging/fluent-bit-server
+          type: Directory
+      - name: config-cm-volume
+        configMap:
+          name: fluent-bit-server-config
+          items:
+          - key: fluent-bit.conf
+            path: fluent-bit.conf

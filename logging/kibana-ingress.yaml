@@ -1,0 +1,25 @@
+apiVersion: extensions/v1beta1
+kind: Ingress
+metadata:
+  annotations:
+    cert-manager.io/cluster-issuer: ca-issuer
+    kubernetes.io/ingress.class: traefik
+    traefik.ingress.kubernetes.io/frontend-entry-points: http,https
+    traefik.ingress.kubernetes.io/redirect-entry-point: https
+    traefik.ingress.kubernetes.io/redirect-permanent: "true"
+  name: kibana
+  namespace: logging
+spec:
+  rules:
+  - host: kibana
+    http:
+      paths:
+      - backend:
+          serviceName: kibana
+          servicePort: 5601
+  tls:
+  - hosts:
+    - kibana
+    secretName: kibana-ingress-cert
+status:
+  loadBalancer: {}
