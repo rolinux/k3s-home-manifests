@@ -1,0 +1,37 @@
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: blackbox-exporter
+  namespace: monitoring
+  labels:
+    k8s-app: blackbox-exporter
+spec:
+  selector:
+    matchLabels:
+      k8s-app: blackbox-exporter
+  template:
+    metadata:
+      labels:
+        k8s-app: blackbox-exporter
+    spec:
+      securityContext:
+        runAsUser: 1006
+        runAsGroup: 1006
+      containers:
+      - name: blackbox-exporter
+        image: prom/blackbox-exporter
+        imagePullPolicy: Always
+        ports:
+          - name: blackbox
+            containerPort: 9115
+        readinessProbe:
+          tcpSocket:
+            port: blackbox
+          initialDelaySeconds: 5
+          periodSeconds: 10
+        livenessProbe:
+          tcpSocket:
+            port: blackbox
+          initialDelaySeconds: 15
+          periodSeconds: 30

@@ -15,40 +15,25 @@ spec:
       labels:
         k8s-app: prometheus
     spec:
-      affinity:
-        nodeAffinity:
-          requiredDuringSchedulingIgnoredDuringExecution:
-            nodeSelectorTerms:
-            - matchExpressions:
-              - key: kubernetes.io/hostname
-                operator: In
-                values:
-                - nuc5
       hostAliases:
-      - ip: "192.168.252.11"
+      - ip: "192.168.7.7"
         hostnames:
-        - "pi3"
-      - ip: "192.168.252.12"
-        hostnames:
-        - "piz"
-      - ip: "192.168.252.13"
-        hostnames:
-        - "pi4"
-      - ip: "192.168.7.3"
-        hostnames:
-        - "key"
-      - ip: "192.168.7.5"
-        hostnames:
-        - "nuc5"
-      - ip: "192.168.7.9"
-        hostnames:
-        - "nuc6"
+        - "ts"
       - ip: "192.168.7.15"
         hostnames:
         - "nuc8"
       securityContext:
         runAsUser: 1004
         runAsGroup: 1004
+      affinity:
+        nodeAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+            - matchExpressions:
+              - key: coroi.net/storage
+                operator: In
+                values:
+                - shared
       containers:
       - args:
         - --storage.tsdb.retention.time=45d
@@ -82,6 +67,10 @@ spec:
         volumeMounts:
         - name: data-volume
           mountPath: /prometheus
+        - name: alert-rules-cm-volume
+          mountPath: /etc/alert.rules.yml
+          subPath: alert.rules.yml
+          readOnly: true
         - name: config-cm-volume
           mountPath: /etc/prometheus.yml
           subPath: prometheus.yml
@@ -90,9 +79,15 @@ spec:
       - name: data-volume
         hostPath:
           # directory location on host
-          path: /volumes/prometheus
+          path: /gvol/prometheus
           # this field is optional
           type: Directory
+      - name: alert-rules-cm-volume
+        configMap:
+          name: prometheus-alert-rules-cm
+          items:
+          - key: alert.rules.yml
+            path: alert.rules.yml
       - name: config-cm-volume
         configMap:
           name: prometheus-config-cm

@@ -1,31 +1,50 @@
 # Steps to install cert-manager on k3s
 
-## Create CustomResourceDefinition (CRD)
+Given that the first version installed was v0.13.1 using manual install of CRDs I took the decision to wipe the cert-management installation and install from zero. As my install doesn't need to be high availability and can survive few minutes of ingress downtime I will include here the steps to clean and old install and install new one.
+
+## Find and remove all ingress objects
+
+Find and delete all the ingres objects from the `kubectl get ingress -A` command and remember to add them back using the manifests. If you don't have manifests, export them into a folder so you can add them back.
+
+## Helm uninstall cert-manager
 
 ```
-# kubectl apply -f https://raw.githubusercontent.com/jetstack/cert-manager/v0.13.1/deploy/manifests/00-crds.yaml
-customresourcedefinition.apiextensions.k8s.io/certificaterequests.cert-manager.io created
-customresourcedefinition.apiextensions.k8s.io/certificates.cert-manager.io created
-customresourcedefinition.apiextensions.k8s.io/challenges.acme.cert-manager.io created
-customresourcedefinition.apiextensions.k8s.io/clusterissuers.cert-manager.io created
-customresourcedefinition.apiextensions.k8s.io/issuers.cert-manager.io created
-customresourcedefinition.apiextensions.k8s.io/orders.acme.cert-manager.io created
+$ helm uninstall --namespace cert-manager cert-manager-1583609748
+release "cert-manager-1583609748" uninstalled
+```
+
+## Delete namespace to clean it further
+
+```
+$ kubectl delete ns cert-manager
+```
+
+## Delete the CRDs
+
+```
+$ kubectl delete -f https://raw.githubusercontent.com/jetstack/cert-manager/v0.13.1/deploy/manifests/00-crds.yaml
+customresourcedefinition.apiextensions.k8s.io "certificaterequests.cert-manager.io" deleted
+customresourcedefinition.apiextensions.k8s.io "certificates.cert-manager.io" deleted
+customresourcedefinition.apiextensions.k8s.io "challenges.acme.cert-manager.io" deleted
+customresourcedefinition.apiextensions.k8s.io "clusterissuers.cert-manager.io" deleted
+customresourcedefinition.apiextensions.k8s.io "issuers.cert-manager.io" deleted
+customresourcedefinition.apiextensions.k8s.io "orders.acme.cert-manager.io" deleted
 ```
 
 ## Create namespace
 
 ```
-# kubectl create namespace cert-manager
+$ kubectl create namespace cert-manager
 namespace/cert-manager created
 ```
 
 ## Add the Jetstack Helm repository and update repo
 
 ```
-# helm repo add jetstack https://charts.jetstack.io
+$ helm repo add jetstack https://charts.jetstack.io
 "jetstack" has been added to your repositories
 
-# helm repo update
+$ helm repo update
 Hang tight while we grab the latest from your chart repositories...
 ...Successfully got an update from the "jetstack" chart repository
 ...Successfully got an update from the "stable" chart repository
@@ -35,9 +54,10 @@ Update Complete. ⎈ Happy Helming!⎈
 ## Install cert-manager using helm
 
 ```
-# helm install --namespace cert-manager --version v0.13.1  --generate-name jetstack/cert-manager
-NAME: cert-manager-1580422767
-LAST DEPLOYED: Thu Jan 30 22:19:31 2020
+$ helm install cert-manager jetstack/cert-manager --namespace cert-manager \
+  --version v0.16.1 --set installCRDs=true
+NAME: cert-manager
+LAST DEPLOYED: Sat Aug 15 14:49:36 2020
 NAMESPACE: cert-manager
 STATUS: deployed
 REVISION: 1
@@ -51,13 +71,13 @@ or Issuer resource (for example, by creating a 'letsencrypt-staging' issuer).
 More information on the different types of issuers and how to configure them
 can be found in our documentation:
 
-https://docs.cert-manager.io/en/latest/reference/issuers.html
+https://cert-manager.io/docs/configuration/
 
 For information on how to configure cert-manager to automatically provision
 Certificates for Ingress resources, take a look at the `ingress-shim`
 documentation:
 
-https://docs.cert-manager.io/en/latest/reference/ingress-shim.html
+https://cert-manager.io/docs/usage/ingress/
 ```
 
 ## Generate a signing key pair (CA)
@@ -94,3 +114,5 @@ spec:
   ca:
     secretName: ca-key-pair
 ```
+
+## Add back all the ingress

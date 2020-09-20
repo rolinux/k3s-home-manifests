@@ -4,6 +4,9 @@ data:
     global:
       scrape_interval: 15s
 
+    rule_files:
+      - alert.rules.yml
+
     scrape_configs:
       - job_name: 'prometheus'
         #scrape_interval: 5s
@@ -16,21 +19,30 @@ data:
         # - targets: ['localhost:9323']
       - job_name: 'node_exporter'
         scrape_interval: 15s
+        honor_labels: true
         static_configs:
+          - targets: ['ts:9100']
           - targets: ['nuc5:9100']
           - targets: ['nuc6:9100']
           - targets: ['nuc8:9100']
           - targets: ['piz:9100']
+          #- targets: ['pizu1:9100']
           - targets: ['pi3:9100']
           - targets: ['pi4:9100']
+          - targets: ['pi4u0:9100']
+          - targets: ['pi4u2:9100']
           - targets: ['key:9100']
-            #- job_name: 'snmp'
+        relabel_configs:
+          - source_labels: ['__address__']
+            separator:     ':'
+            regex:         '(.*):.*'
+            target_label:  'instance'
+            replacement:   '${1}'
       - job_name: 'pushgateway'
         scrape_interval: 60s
         honor_labels: true
         static_configs:
           - targets: ['nuc5:30091']
-          - targets: ['nuc6:9091']
       - job_name: 'hs110'
         scrape_interval: 60s
         honor_labels: true
@@ -38,7 +50,21 @@ data:
           - targets: ['hs110-plug-57:80'] # NUC6
           - targets: ['hs110-plug-55:80'] # TS140
           - targets: ['hs110-plug-56:80'] # NUC8
-
+      - job_name: 'hs1xx-snmp-fan-automation'
+        scrape_interval: 60s
+        honor_labels: true
+        static_configs:
+          - targets: ['hs1xx-snmp-fan-automation:80']
+      - job_name: 'traefik-prometheus'
+        scrape_interval: 15s
+        honor_labels: true
+        static_configs:
+          - targets: ['traefik-prometheus.kube-system:9100']
+      - job_name: 'kube-state-metrics'
+        scrape_interval: 15s
+        honor_labels: true
+        static_configs:
+          - targets: ['kube-state-metrics.monitoring.svc.cluster.local:8080']
         # Override the global default and scrape targets from this job every 5 seconds.
         #scrape_interval: 5s
         #static_configs:
@@ -54,6 +80,23 @@ data:
         #    target_label: instance
         #  - target_label: __address__
         #    replacement: 127.0.0.1:9116  # SNMP exporter.
+      - job_name: 'blackbox'
+        metrics_path: /probe
+        params:
+          module: [http_2xx]  # Look for a HTTP 200 response.
+        static_configs:
+          - targets:
+            - http://pi3/admin/api.php   # Pi-Hole on Pi3
+            - http://piz/admin/api.php   # Pi-hole on PiZ
+            - http://smokeping.monitoring.svc.cluster.local   # Smokeping
+            - http://grafana.monitoring.svc.cluster.local/api/health   # Grafana
+        relabel_configs:
+          - source_labels: [__address__]
+            target_label: __param_target
+          - source_labels: [__param_target]
+            target_label: instance
+          - target_label: __address__
+            replacement: blackbox-exporter:80  # The blackbox exporter's real hostname:port.
 
 kind: ConfigMap
 metadata:
