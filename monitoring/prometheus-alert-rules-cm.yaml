@@ -4,6 +4,38 @@ data:
     groups:
     - name: Hardware alerts
       rules:
+      - alert: Kube Pod Restarts too often
+        expr: delta(kube_pod_container_status_restarts_total[1h]) > 3
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          title: Container {{ $labels.container }}, pod {{ $labels.pod }} restarts too often
+          description: Container {{ $labels.container }}, pod {{ $labels.pod }} restarted {{ $value }} times in the last hour
+      - alert: Kube Pod Terminated with Errors
+        expr: kube_pod_container_status_terminated_reason{reason!~"Completed"} == 1
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          title: Container {{ $labels.container }}, pod {{ $labels.pod }} terminated
+          description: Container {{ $labels.container }}, pod {{ $labels.pod }} terminated with {{ $labels.reason }}
+      - alert: Kube Node not Ready
+        expr: kube_node_status_condition{condition=~"Ready",status="true"} == 0
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          title: Node {{ $labels.node }} not Ready
+          description: Kubernetes {{ $labels.node }} Node not Ready
+      - alert: Kube Node Status Condition
+        expr: kube_node_status_condition{condition=~"(DiskPressure|MemoryPressure|NetworkUnavailable|PIDPressure)",status="true"} == 1
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          title: Node {{ $labels.node }} {{ $labels.condition }} condition is True
+          description: Kubernetes Node {{ $labels.condition }} condition is True for {{ $labels.node }} Node
       - alert: Node down
         expr: up{job="node_exporter", instance!~".*(ts|nuc8).*"} == 0
         for: 3m
@@ -45,13 +77,13 @@ data:
           title: "Unifi switch temperature above 77 degrees"
           description: "Unifi switch temperature at {{ $value }} degrees"
       - alert: No data from Arduino
-        expr: delta(env_sensor_temperature[15m]) == 0
+        expr: delta(env_sensor_temperature[30m]) == 0
         for: 5m
         labels:
           severity: warning
         annotations:
           title: "Arduino {{ $labels.instance }} instance sent no new data"
-          description: "Arduino {{ $labels.instance }} instance send no new data for more than 20 minutes"
+          description: "Arduino {{ $labels.instance }} instance send no new data for more than 35 minutes"
       - alert: Host CPU utilisation above 60%
         expr: (100 - (avg by(instance) (irate(node_cpu_seconds_total{mode="idle"}[15m])) * 100)) > 60
         for: 5m
