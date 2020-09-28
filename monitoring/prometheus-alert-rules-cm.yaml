@@ -2,7 +2,7 @@ apiVersion: v1
 data:
   alert.rules.yml: |
     groups:
-    - name: Hardware alerts
+    - name: Kubernetes alerts
       rules:
       - alert: Kube Pod Restarts too often
         expr: delta(kube_pod_container_status_restarts_total[1h]) > 3
@@ -36,14 +36,8 @@ data:
         annotations:
           title: Node {{ $labels.node }} {{ $labels.condition }} condition is True
           description: Kubernetes Node {{ $labels.condition }} condition is True for {{ $labels.node }} Node
-      - alert: Node down
-        expr: up{job="node_exporter", instance!~".*(ts|nuc8).*"} == 0
-        for: 3m
-        labels:
-          severity: warning
-        annotations:
-          title: Node {{ $labels.instance }} is down
-          description: Failed to scrape {{ $labels.job }} on {{ $labels.instance }} for more than 3 minutes. Node seems down.
+    - name: Endpoints alerts
+      rules:
       - alert: Endpoint down
         expr: probe_success{job="blackbox"} == 0
         for: 5m
@@ -52,6 +46,16 @@ data:
         annotations:
           title: Endpoint {{ $labels.instance }} is down
           description: Failed to scrape {{ $labels.instance }} for more than 5 minutes. Endpoint seems down.
+    - name: Hardware alerts
+      rules:
+      - alert: Node down
+        expr: up{job="node_exporter", instance!~".*(ts|nuc8).*"} == 0
+        for: 3m
+        labels:
+          severity: warning
+        annotations:
+          title: Node {{ $labels.instance }} is down
+          description: Failed to scrape {{ $labels.job }} on {{ $labels.instance }} for more than 3 minutes. Node seems down.
       - alert: Disk space less than 20% Free
         expr: round(100 - ((node_filesystem_avail_bytes * 100) / node_filesystem_size_bytes), 0.5)  > 80
         for: 15m
